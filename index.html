@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESP32 Sensor Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial; text-align: center; margin: 20px; background: #f4f6f9; }
+    h1 { color: #333; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+    canvas { background: white; border-radius: 12px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+  </style>
+</head>
+<body>
+  <h1>🌐 ESP32 Sensor Dashboard (ThingSpeak)</h1>
+  <div class="grid">
+    <div><h3>Soil Moisture (%)</h3><canvas id="moistureChart"></canvas></div>
+    <div><h3>Temperature (°C)</h3><canvas id="tempChart"></canvas></div>
+    <div><h3>Humidity (%)</h3><canvas id="humChart"></canvas></div>
+    <div><h3>Gas Sensor (Raw)</h3><canvas id="gasChart"></canvas></div>
+  </div>
+
+  <script>
+    const channelID = "3083654";
+    const readAPIKey = "965MMFEI6XPJ8G1N";
+    const maxPoints = 20;
+
+    function createChart(ctx, label, color) {
+      return new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label, data: [], borderColor: color, fill: false, tension: 0.3 }] },
+        options: { responsive: true, scales: { x: { display: false }, y: { beginAtZero: true } } }
+      });
+    }
+
+    let moistureChart = createChart(document.getElementById('moistureChart'), "Moisture", "blue");
+    let tempChart = createChart(document.getElementById('tempChart'), "Temperature", "red");
+    let humChart = createChart(document.getElementById('humChart'), "Humidity", "green");
+    let gasChart = createChart(document.getElementById('gasChart'), "Gas Level", "orange");
+
+    async function fetchThingSpeak() {
+      let url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=20`;
+      let res = await fetch(url);
+      let data = await res.json();
+      let feeds = data.feeds;
+
+      function updateChart(chart, field) {
+        chart.data.labels = feeds.map(f => f.created_at.split("T")[1].split("Z")[0]);
+        chart.data.datasets[0].data = feeds.map(f => Number(f[field]));
+        chart.update();
+      }
+
+      updateChart(moistureChart, 'field3');
+      updateChart(tempChart, 'field1');
+      updateChart(humChart, 'field2');
+      updateChart(gasChart, 'field4');
+    }
+
+    setInterval(fetchThingSpeak, 20000); // fetch every 20s
+    fetchThingSpeak(); // initial fetch
+  </script>
+</body>
+</html>
