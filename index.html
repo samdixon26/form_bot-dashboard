@@ -4,38 +4,144 @@
   <title>ESP32 Sensor Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial; text-align: center; margin: 20px; background: #f4f6f9; }
-    h1 { color: #333; margin-bottom: 20px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
-    canvas { background: white; border-radius: 12px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      text-align: center; 
+      margin: 0; 
+      padding: 0; 
+      background: linear-gradient(135deg, #e0f7fa, #e1f5fe); 
+      color: #333;
+    }
+
+    h1 { 
+      background: #0288d1; 
+      color: white; 
+      margin: 0; 
+      padding: 20px 10px; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      font-size: 28px;
+      letter-spacing: 1px;
+    }
+
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+      gap: 30px; 
+      padding: 30px; 
+      max-width: 1400px; 
+      margin: auto; 
+    }
+
+    .grid div { 
+      background: #ffffff; 
+      border-radius: 16px; 
+      padding: 20px; 
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15); 
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .grid div:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+    }
+
+    h3 { 
+      margin-bottom: 15px; 
+      font-size: 20px; 
+      color: #444; 
+      border-bottom: 2px solid #0288d1; 
+      display: inline-block; 
+      padding-bottom: 4px;
+    }
+
+    canvas { 
+      width: 100% !important; 
+      height: 300px !important; 
+    }
+
+    footer {
+      margin-top: 20px;
+      padding: 15px;
+      font-size: 14px;
+      color: #666;
+      background: #f1f1f1;
+      border-top: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
-  <h1>🌐 ESP32 Sensor Dashboard </h1>
+  <h1>🌐 ESP32 Sensor Dashboard</h1>
   <div class="grid">
-    <div><h3>wetness of soil(%)</h3><canvas id="moistureChart"></canvas></div>
-    <div><h3>Temperature (°C)</h3><canvas id="tempChart"></canvas></div>
-    <div><h3>Humidity (%)</h3><canvas id="humChart"></canvas></div>
-    <div><h3>oxygen level (Raw)</h3><canvas id="gasChart"></canvas></div>
+    <div><h3>🌱 Soil Wetness (%)</h3><canvas id="moistureChart"></canvas></div>
+    <div><h3>🌡 Temperature (°C)</h3><canvas id="tempChart"></canvas></div>
+    <div><h3>💧 Humidity (%)</h3><canvas id="humChart"></canvas></div>
+    <div><h3>🧪 Oxygen Level (Raw)</h3><canvas id="gasChart"></canvas></div>
   </div>
+
+  <footer>
+    📡 Powered by ESP32 & ThingSpeak | Designed for real-time IoT Monitoring
+  </footer>
 
   <script>
     const channelID = "3083654";
     const readAPIKey = "965MMFEI6XPJ8G1N";
     const maxPoints = 20;
 
-    function createChart(ctx, label, color) {
+    // Function to create charts with nice colors
+    function createChart(ctx, label, borderColor, bgColor) {
       return new Chart(ctx, {
         type: 'line',
-        data: { labels: [], datasets: [{ label, data: [], borderColor: color, fill: false, tension: 0.3 }] },
-        options: { responsive: true, scales: { x: { display: false }, y: { beginAtZero: true } } }
+        data: { 
+          labels: [], 
+          datasets: [{ 
+            label, 
+            data: [], 
+            borderColor: borderColor, 
+            backgroundColor: bgColor, 
+            fill: true, 
+            tension: 0.3, 
+            borderWidth: 2 
+          }] 
+        },
+        options: { 
+          responsive: true, 
+          plugins: { legend: { labels: { font: { size: 14 } } } },
+          scales: { 
+            x: { display: false }, 
+            y: { beginAtZero: true } 
+          } 
+        }
       });
     }
 
-    let moistureChart = createChart(document.getElementById('moistureChart'), "Moisture", "blue");
-    let tempChart = createChart(document.getElementById('tempChart'), "Temperature", "red");
-    let humChart = createChart(document.getElementById('humChart'), "Humidity", "green");
-    let gasChart = createChart(document.getElementById('gasChart'), "Gas Level", "orange");
+    // 🎨 Custom bright colors
+    let moistureChart = createChart(
+      document.getElementById('moistureChart'), 
+      "Moisture", 
+      "rgba(30, 136, 229, 1)",     // Blue
+      "rgba(30, 136, 229, 0.3)"    // Light blue fill
+    );
+
+    let tempChart = createChart(
+      document.getElementById('tempChart'), 
+      "Temperature", 
+      "rgba(244, 67, 54, 1)",      // Red
+      "rgba(244, 67, 54, 0.3)"     // Light red fill
+    );
+
+    let humChart = createChart(
+      document.getElementById('humChart'), 
+      "Humidity", 
+      "rgba(76, 175, 80, 1)",      // Green
+      "rgba(76, 175, 80, 0.3)"     // Light green fill
+    );
+
+    let gasChart = createChart(
+      document.getElementById('gasChart'), 
+      "Gas Level", 
+      "rgba(255, 152, 0, 1)",      // Orange
+      "rgba(255, 152, 0, 0.3)"     // Light orange fill
+    );
 
     async function fetchThingSpeak() {
       let url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=20`;
@@ -55,8 +161,8 @@
       updateChart(gasChart, 'field4');
     }
 
-    setInterval(fetchThingSpeak, 20000); // fetch every 20s
-    fetchThingSpeak(); // initial fetch
+    setInterval(fetchThingSpeak, 20000); 
+    fetchThingSpeak();
   </script>
 </body>
 </html>
